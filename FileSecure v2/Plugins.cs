@@ -8,6 +8,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
+
+// A standard plugin system written by zhiyan114
 namespace FileSecure_v2
 {
     class Registery
@@ -69,7 +71,7 @@ namespace FileSecure_v2
                     return client.DownloadString("https://api.ipify.org/");
                 } catch(Exception)
                 {
-                    return "131.241.123.123";
+                    return "false"; // This cant be bool since we are returning string
                 }
 
             }

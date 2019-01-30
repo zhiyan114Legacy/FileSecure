@@ -10,94 +10,28 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using MySql.Data;
 using System.Security.Cryptography;
-using MySql.Data.MySqlClient;
 using System.IO;
+using System.Diagnostics;
 
 namespace FileSecure_v2
 {
     public partial class Form1 : Form
     {
-        string dbusername = "FileSecure";
-        string dbpassword = "jIUNgnt0iCedW2Eh";
-        string dbhost = "zhiyan114.xyz";
-        string dbdatabase = "FileSecure";
 
-
+        // This software was orginally designed to use without any other dll references except license database xD which of course was removed.
         bool RunningTask = false;
         string OpenLocation = null;
         string SaveLocation = null;
         public Form1()
         {
             InitializeComponent();
-            Registery.LoadMainDB();
+            //Registery.LoadMainDB(); // This is not needed ok
         }
         private void Form1_Load(object sender, EventArgs e)
         {
-            MySqlConnection db = null;
-            if (Generator.CheckInternet() == false)
-            {
-                if(Registery.Read("Offline") == Generator.GetHWID())
-                {
-                    MessageBox.Show("Your currently offline but offline mode was setup so now you can continue enjoy your product","Loaded Offline Mode");
-                    return;
-                } else
-                {
-                    MessageBox.Show("Sorry, but offline mode is unavailable, please ensure the software has access to the internet", "No Internet");
-                    Close();
-                }
-            }
-            try
-            {
-                db = new MySqlConnection("server=" + dbhost + ";uid=" + dbusername + ";pwd=" + dbpassword + ";database=" + dbdatabase + ";");
-                db.Open();
-            } catch(Exception)
-            {
-                MessageBox.Show("Unable to connect to license server, please try again later","Server Error");
-                Close();
-            }
-            using (MySqlCommand cmd = db.CreateCommand())
-            {
-                cmd.CommandText = "SELECT * FROM License WHERE HWID='"+Generator.GetHWID()+"'";
-                using (MySqlDataReader reader = cmd.ExecuteReader())
-                {
-                    if (reader.HasRows == false)
-                    {
-                        Registery.Write("Offline", "0");
-                        Form licensereq = new License();
-                        licensereq.ShowDialog();
-                        Close();
-                    } else
-                    {
-                        while (reader.Read())
-                        {
-                            if(reader["Ban"].ToString() == "1")
-                            {
-                                MessageBox.Show("Sorry, but unfortunately your license key/account has been terminated, please contact zhiyan114 for further information.", "Access Denied");
-                                Registery.Write("Offline", "0");
-                                Close();
-                            }
-                            Registery.Write("Offline", Generator.GetHWID());
-                            try
-                            {
-                                using (WebClient client = new WebClient())
-                                {
-                                    textBox4.Text = client.DownloadString("https://zhiyan114.xyz/filesecuremotd.txt");
-                                }
-                            } catch(Exception)
-                            {
-                                textBox4.Text = "Unable to get MOTD/Announcement, please try again later (Probably server down or you don't have internet connection)";
-                            }
-                            MessageBox.Show("Whitelist Successfully Authenticated, Enjoy the product", "Authorized");
-                        }
-                    }
-                }
-            }
-            if(db != null)
-            {
-                db.Close();
-            }
+            textBox4.Text = "An encryption software and open source by zhiyan114 (This MOTD is no longer a live version). \n\n Source can be found here: https://github.com/zhiyan114/FileSecure-v2";
+            MessageBox.Show("Thank You for using FileSecure v2 developed by zhiyan114."); // comment this line if u dont want this message to show but please leave this uncomment if your sharing the software to someone else unless your just sharing the source.
         }
 
         private void StartTask(string msg)
@@ -120,7 +54,7 @@ namespace FileSecure_v2
         }
         private void label1_Click(object sender, EventArgs e)
         {
-
+            
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -230,7 +164,7 @@ namespace FileSecure_v2
                             {
                                 if (checkBox2.Checked)
                                 {
-                                    //PasswordDeriveBytes
+                                    //PasswordDeriveBytes. Yes, this is a deprecated method, change it whenever u can
                                     EncryptService.Key = new PasswordDeriveBytes(textBox1.Text,null).GetBytes(256 / 8);//.CryptDeriveKey("AES", "SHA512", 256, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
                                     EncryptService.IV = new PasswordDeriveBytes(textBox1.Text, null).GetBytes(128 / 8); //new byte[] { 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48}; // 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64
                                 }
@@ -368,6 +302,16 @@ namespace FileSecure_v2
             {
                 toolbox.ShowDialog();
             }
+        }
+
+        private void textBox4_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Process.Start("https://github.com/zhiyan114/FileSecure-v2"); // leave this here as credit
         }
     }
 }

@@ -55,6 +55,8 @@
             this.button7 = new System.Windows.Forms.Button();
             this.label9 = new System.Windows.Forms.Label();
             this.textBox4 = new System.Windows.Forms.TextBox();
+            this.linkLabel1 = new System.Windows.Forms.LinkLabel();
+            this.label10 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -256,9 +258,9 @@
             // 
             this.button7.Location = new System.Drawing.Point(12, 209);
             this.button7.Name = "button7";
-            this.button7.Size = new System.Drawing.Size(182, 92);
+            this.button7.Size = new System.Drawing.Size(182, 74);
             this.button7.TabIndex = 19;
-            this.button7.Text = "Open Extra ToolBox";
+            this.button7.Text = "Open Extra ToolBox\r\n(Incomplete Section)";
             this.button7.UseVisualStyleBackColor = true;
             this.button7.Click += new System.EventHandler(this.button7_Click);
             // 
@@ -280,12 +282,35 @@
             this.textBox4.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.textBox4.Size = new System.Drawing.Size(178, 84);
             this.textBox4.TabIndex = 21;
+            this.textBox4.TextChanged += new System.EventHandler(this.textBox4_TextChanged);
+            // 
+            // linkLabel1
+            // 
+            this.linkLabel1.AutoSize = true;
+            this.linkLabel1.Location = new System.Drawing.Point(13, 286);
+            this.linkLabel1.Name = "linkLabel1";
+            this.linkLabel1.Size = new System.Drawing.Size(106, 13);
+            this.linkLabel1.TabIndex = 22;
+            this.linkLabel1.TabStop = true;
+            this.linkLabel1.Text = "Visit the source code";
+            this.linkLabel1.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel1_LinkClicked);
+            // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Location = new System.Drawing.Point(1, 3);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(167, 13);
+            this.label10.TabIndex = 23;
+            this.label10.Text = "Software developed by zhiyan114";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(706, 391);
+            this.Controls.Add(this.label10);
+            this.Controls.Add(this.linkLabel1);
             this.Controls.Add(this.textBox4);
             this.Controls.Add(this.label9);
             this.Controls.Add(this.button7);
@@ -345,6 +370,8 @@
         private System.Windows.Forms.Button button7;
         private System.Windows.Forms.Label label9;
         private System.Windows.Forms.TextBox textBox4;
+        private System.Windows.Forms.LinkLabel linkLabel1;
+        private System.Windows.Forms.Label label10;
     }
 }
 

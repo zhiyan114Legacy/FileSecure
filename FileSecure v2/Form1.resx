@@ -124,7 +124,11 @@
     <value>157, 17</value>
   </metadata>
   <data name="textBox3.Text" xml:space="preserve">
-    <value>v2.1.5.0 Beta (CURRENT):
+    <value>v2.2.0.0 Final (CURRENT):
+* Remove License system as well as other informations
+* Made it open-source
+
+v2.1.5.0 Beta:
 * Changed offline activation check method to prevent whitelist bypass
 * Added Extra ToolBox for useful tools to use
 * Added MOTD/Announcement TextBox so that you can get latest informations
