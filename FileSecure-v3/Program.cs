@@ -15,7 +15,7 @@ namespace FileSecure_v3
     class Program
     {
         static int CycleSize = 1024 * 1024 * 100; // Increasing this value can reduce the amount of cycle that is required to encrypt an file but also require higher memory consumption
-        static void Encrypt(byte[] PasswordToKey,string OpenPath, string SavePath)
+        static int Encrypt(byte[] PasswordToKey,string OpenPath, string SavePath)
         {
             // Generate a random Nonce
             byte[] nonce = new byte[128 / 8];
@@ -29,7 +29,7 @@ namespace FileSecure_v3
                 byte[] buffer = new byte[CycleSize];
                 plainfile.Seek(0, SeekOrigin.Begin);
                 int bytesRead = plainfile.Read(buffer, 0, CycleSize);
-                int TotalFileSize = 0;
+                int TotalFileSize = nonce.Length;
                 using (FileStream encryptfile = new FileStream(SavePath, FileMode.OpenOrCreate))
                 {
                     encryptfile.Write(nonce, 0, nonce.Length);
@@ -52,10 +52,10 @@ namespace FileSecure_v3
                     }
                     Console.WriteLine("Cycle Completed, Final Size: "+TotalFileSize);
                 }
-
+                return TotalFileSize;
             }
         }
-        static public void Decrypt(byte[] PasswordToKey, string OpenPath, string SavePath)
+        static public int Decrypt(byte[] PasswordToKey, string OpenPath, string SavePath)
         {
             using (FileStream encryptfile = File.OpenRead(OpenPath))
             {
@@ -68,6 +68,7 @@ namespace FileSecure_v3
                 cipher.Init(false, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
                 byte[] buffer = new byte[CycleSize];
                 int bytesRead = encryptfile.Read(buffer, 0, CycleSize);
+                int TotalFileSize = 0;
                 using (FileStream plainfile = new FileStream(SavePath, FileMode.OpenOrCreate))
                 {
                     int CycleCount = 0;
@@ -83,11 +84,13 @@ namespace FileSecure_v3
                         if (bytesRead < CycleSize)
                             cipher.DoFinal(cipherText, len);
                         Console.WriteLine("Cycle #" + CycleCount + "'s Data Length: " + cipherText.Length);
+                        TotalFileSize = TotalFileSize + cipherText.Length;
                         plainfile.Write(cipherText, 0, cipherText.Length);
                         bytesRead = encryptfile.Read(buffer, 0, CycleSize);
-
                     }
+                    Console.WriteLine("Cycle Completed, Final Size: " + TotalFileSize);
                 }
+                return TotalFileSize;
             }
         }
         static void Main(string[] args)
