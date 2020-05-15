@@ -51,6 +51,7 @@ namespace FileSecure_v3
                         bytesRead = plainfile.Read(buffer, 0, CycleSize);
                     }
                     Console.WriteLine("Cycle Completed, Final Size: "+TotalFileSize);
+                    Array.Clear(buffer, 0, buffer.Length); // Clean the memory so that it stops hogging the memory if you decided to keep it running after it finishes the task.
                 }
                 return TotalFileSize;
             }
@@ -89,6 +90,7 @@ namespace FileSecure_v3
                         bytesRead = encryptfile.Read(buffer, 0, CycleSize);
                     }
                     Console.WriteLine("Cycle Completed, Final Size: " + TotalFileSize);
+                    Array.Clear(buffer, 0, buffer.Length); // Clean the memory so that it stops hogging the memory if you decided to keep it running after it finishes the task.
                 }
                 return TotalFileSize;
             }
