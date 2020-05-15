@@ -14,6 +14,82 @@ namespace FileSecure_v3
 {
     class Program
     {
+        static int CycleSize = 1024 * 1024 * 100; // Increasing this value can reduce the amount of cycle that is required to encrypt an file but also require higher memory consumption
+        static void Encrypt(byte[] PasswordToKey,string OpenPath, string SavePath)
+        {
+            // Generate a random Nonce
+            byte[] nonce = new byte[128 / 8];
+            new Random().NextBytes(nonce);
+            // Setup the Crypto Engine
+            GcmBlockCipher cipher = new GcmBlockCipher(new AesEngine());
+            cipher.Init(true, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
+            // Read the file ad start the encryption
+            using (FileStream plainfile = new FileStream(OpenPath, FileMode.Open))
+            {
+                byte[] buffer = new byte[CycleSize];
+                plainfile.Seek(0, SeekOrigin.Begin);
+                int bytesRead = plainfile.Read(buffer, 0, CycleSize);
+                int TotalFileSize = 0;
+                using (FileStream encryptfile = new FileStream(SavePath, FileMode.OpenOrCreate))
+                {
+                    encryptfile.Write(nonce, 0, nonce.Length);
+                    int CycleCount = 0;
+                    while (bytesRead > 0)
+                    {
+                        CycleCount = CycleCount + 1;
+                        if (bytesRead < CycleSize)
+                            encryptfile.Seek(0, SeekOrigin.End);
+                        else
+                            encryptfile.Seek(0, SeekOrigin.Current);
+                        byte[] cipherText = new byte[cipher.GetOutputSize(bytesRead)];
+                        int len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
+                        if (bytesRead < CycleSize)
+                            cipher.DoFinal(cipherText, len);
+                        Console.WriteLine("Cycle #" + CycleCount + "'s Data Length: " + cipherText.Length);
+                        TotalFileSize = TotalFileSize + cipherText.Length;
+                        encryptfile.Write(cipherText, 0, cipherText.Length);
+                        bytesRead = plainfile.Read(buffer, 0, CycleSize);
+                    }
+                    Console.WriteLine("Cycle Completed, Final Size: "+TotalFileSize);
+                }
+
+            }
+        }
+        static public void Decrypt(byte[] PasswordToKey, string OpenPath, string SavePath)
+        {
+            using (FileStream encryptfile = File.OpenRead(OpenPath))
+            {
+                // Setup the Crypto Engine
+                byte[] nonce = new byte[16];
+                encryptfile.Seek(0, SeekOrigin.Begin);
+                encryptfile.Read(nonce, 0, nonce.Length);
+                encryptfile.Seek(0, SeekOrigin.Current);
+                GcmBlockCipher cipher = new GcmBlockCipher(new AesEngine());
+                cipher.Init(false, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
+                byte[] buffer = new byte[CycleSize];
+                int bytesRead = encryptfile.Read(buffer, 0, CycleSize);
+                using (FileStream plainfile = new FileStream(SavePath, FileMode.OpenOrCreate))
+                {
+                    int CycleCount = 0;
+                    while (bytesRead > 0)
+                    {
+                        CycleCount = CycleCount + 1;
+                        if (bytesRead < CycleSize)
+                            plainfile.Seek(0, SeekOrigin.End);
+                        else
+                            plainfile.Seek(0, SeekOrigin.Current);
+                        var cipherText = new byte[cipher.GetOutputSize(bytesRead)];
+                        var len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
+                        if (bytesRead < CycleSize)
+                            cipher.DoFinal(cipherText, len);
+                        Console.WriteLine("Cycle #" + CycleCount + "'s Data Length: " + cipherText.Length);
+                        plainfile.Write(cipherText, 0, cipherText.Length);
+                        bytesRead = encryptfile.Read(buffer, 0, CycleSize);
+
+                    }
+                }
+            }
+        }
         static void Main(string[] args)
         {
             // Some variable that we will need to do the jobs
@@ -22,7 +98,6 @@ namespace FileSecure_v3
             bool AllFileInFolder;
             string SavePath;
             bool IsEncryption;
-            int CycleSize = 1024 * 1024 * 100;
             // Some credit stuff and notes
             Console.Title = "FileSecure v3 by zhiyan114";
             Console.WriteLine("Thank you for choosing FileSecure v3, a light-weighted command prompt file protection software ");
@@ -94,7 +169,7 @@ namespace FileSecure_v3
                     // Invalid response, oh come on...
                     Console.Clear();
                     Console.WriteLine("Invalid Response, Type Y for Encryption or N Decryption");
-                    Response = Console.ReadLine();
+                    EncOrDecResponse = Console.ReadLine();
                 }
             }
             Console.Clear();
@@ -162,41 +237,8 @@ namespace FileSecure_v3
                     // Single File Encryption
                     try
                     {
-                        // Generate a random Nonce
-                        byte[] nonce = new byte[128 / 8];
-                        new Random().NextBytes(nonce);
-                        // Setup the Crypto Engine
-                        GcmBlockCipher cipher = new GcmBlockCipher(new AesEngine());
-                    cipher.Init(true, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
-                    // Read the file ad start the encryption
-                    using (FileStream plainfile = new FileStream(OpenPath,FileMode.Open))
-                        {
-                            Console.WriteLine("Encrypting File, please wait...");
-                            
-                            byte[] buffer = new byte[CycleSize];
-                            plainfile.Seek(0, SeekOrigin.Begin);
-                            int bytesRead = plainfile.Read(buffer, 0, CycleSize);
-                            using(FileStream encryptfile = new FileStream(SavePath,FileMode.OpenOrCreate))
-                            {
-                                encryptfile.Write(nonce, 0, nonce.Length);
-                                int CycleCount = 0;
-                                while (bytesRead > 0) {
-                                CycleCount = CycleCount + 1;
-                                if(bytesRead < CycleSize)
-                                    encryptfile.Seek(0, SeekOrigin.End);
-                                else
-                                    encryptfile.Seek(0, SeekOrigin.Current);
-                                var cipherText = new byte[cipher.GetOutputSize(bytesRead)];
-                                    var len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
-                                    if(bytesRead < CycleSize)
-                                        cipher.DoFinal(cipherText, len);
-                                Console.WriteLine("Cycle #"+CycleCount+"'s Data Length: "+cipherText.Length);
-                                    encryptfile.Write(cipherText, 0, cipherText.Length);
-                                    bytesRead = plainfile.Read(buffer, 0, CycleSize);
-                                }
-                            }
-
-                        }
+                        Console.WriteLine("Encrypting File, please wait...");
+                        Encrypt(PasswordToKey, OpenPath, SavePath);
                         Console.WriteLine("Encryption Completed, press Enter to exit the application");
                         Console.ReadLine();
                     } catch(UnauthorizedAccessException) {
@@ -217,38 +259,8 @@ namespace FileSecure_v3
                     // Single File Decryption
                     try
                     {
-                        using (FileStream encryptfile = File.OpenRead(OpenPath))
-                        {
-                            // Setup the Crypto Engine
-                            byte[] nonce = new byte[16];
-                            encryptfile.Seek(0, SeekOrigin.Begin);
-                            encryptfile.Read(nonce,0,nonce.Length);
-                            encryptfile.Seek(0, SeekOrigin.Current);
-                            GcmBlockCipher cipher = new GcmBlockCipher(new AesEngine());
-                            cipher.Init(false, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
-                            byte[] buffer = new byte[CycleSize];
-                            int bytesRead = encryptfile.Read(buffer, 0, CycleSize);
-                            using (FileStream plainfile = new FileStream(SavePath, FileMode.OpenOrCreate))
-                            {
-                                int CycleCount = 0;
-                                while (bytesRead > 0)
-                                {
-                                    CycleCount = CycleCount + 1;
-                                    if (bytesRead < CycleSize)
-                                        plainfile.Seek(0, SeekOrigin.End);
-                                    else
-                                        plainfile.Seek(0, SeekOrigin.Current);
-                                    var cipherText = new byte[cipher.GetOutputSize(bytesRead)];
-                                    var len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
-                                    if (bytesRead < CycleSize)
-                                        cipher.DoFinal(cipherText, len);
-                                    Console.WriteLine("Cycle #" + CycleCount + "'s Data Length: " + cipherText.Length);
-                                    plainfile.Write(cipherText, 0, cipherText.Length);
-                                    bytesRead = encryptfile.Read(buffer, 0, CycleSize);
-
-                                }
-                            }
-                        }
+                        Console.WriteLine("Decrypting File, please wait...");
+                        Decrypt(PasswordToKey, OpenPath, SavePath);
                         Console.WriteLine("Decryption Completed, press Enter to exit the application");
                         Console.ReadLine();
                     }
