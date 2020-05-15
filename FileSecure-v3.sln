@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29519.181
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileSecure-v3", "FileSecure-v3\FileSecure-v3.csproj", "{135C3F24-20D3-41EE-9EB0-F653D636EB4E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{135C3F24-20D3-41EE-9EB0-F653D636EB4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{135C3F24-20D3-41EE-9EB0-F653D636EB4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{135C3F24-20D3-41EE-9EB0-F653D636EB4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{135C3F24-20D3-41EE-9EB0-F653D636EB4E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B250C8C0-30D6-47FC-A4C2-7834EC448A2F}
+	EndGlobalSection
+EndGlobal
