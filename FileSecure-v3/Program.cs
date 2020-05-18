@@ -96,7 +96,7 @@ namespace FileSecure_v3
             // Some credit stuff and notes
             Console.Title = "FileSecure v3 by zhiyan114";
             Console.WriteLine("Thank you for choosing FileSecure v3, a light-weighted command prompt file protection software ");
-            Console.WriteLine("This version has many improvement including switching encryption to AES-GCM (Take that back, BouncyCastle isn't working well atm so we fallback ) as well as removing unnecessary need for IV input while still maintaining the same security level. Do note that some feature (such as ability to use randomly generated key) will not be included.");
+            Console.WriteLine("This version has many improvement including switching encryption to AES-GCM as well as removing unnecessary need for IV input while still maintaining the same security level. Do note that some feature (such as ability to use randomly generated key) will not be included.");
             Console.WriteLine("\n Press Enter to continue");
             Console.ReadLine();
             // Prompt user to enter an encryption password
