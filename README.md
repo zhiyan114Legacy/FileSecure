@@ -6,7 +6,7 @@ This software is completed and tested.
 
 ## Features
 * Mass File or Single File encryption/decryption.
-* AES-GCM Encryption Method (known to be the most secure at this time)
+* AES-256-GCM Encryption Method (known to be the most secure at this time)
 * Light-Weighted (very little memory/disk space consumption is required for the software)
 * Multi-threading for mass file encryption/decryption to process all the files at the same time (speed is limited on your disk unless your using an old CPU)
 * Supported nearly all file-size
