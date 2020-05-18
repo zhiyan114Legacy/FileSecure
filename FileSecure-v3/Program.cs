@@ -37,6 +37,7 @@ namespace FileSecure_v3
                     CipherStream cryptstream = new CipherStream(plainfile, buffblockcipher, buffblockcipher);
                     try
                     {
+                        Console.WriteLine("The File (" + OpenPath + ") has been queued for encryption");
                         cryptstream.CopyTo(encryptfile);
                         Console.WriteLine("The File (" + OpenPath + ") has been successfully encrypted");
                     } catch (UnauthorizedAccessException)
@@ -68,6 +69,7 @@ namespace FileSecure_v3
                     buffblockcipher.Init(false, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
                     try
                     {
+                        Console.WriteLine("The File (" + OpenPath + ") has been queued for decryption");
                         cryptstream.CopyTo(plainfile);
                         Console.WriteLine("The File ("+OpenPath+") has been successfully decrypted.");
                     } catch (UnauthorizedAccessException)
@@ -235,15 +237,18 @@ namespace FileSecure_v3
                     // Encrypting mass file
                     string[] Files = Directory.GetFiles(OpenPath);
                     int TotalProcessedFile = 0;
+                    int TotalFileAvaible = 0;
                     Console.WriteLine("Mass File Encryption Started...");
                     foreach(string file in Files)
                     {
-                        Task.Run(() => { Encrypt(Password, file, SavePath + "/" + Path.GetFileName(file)); TotalProcessedFile = TotalProcessedFile + 1; if (TotalProcessedFile >= Files.Length) { Console.WriteLine("Mass File Encryption Process completed, press enter to exit."); }});
+                        if (Path.GetFileName(file) != "")
+                            TotalFileAvaible = TotalFileAvaible + 1;
+                        Task.Run(() => { Encrypt(Password, file, SavePath + "/" + Path.GetFileNameWithoutExtension(file)+Path.GetExtension(file)); TotalProcessedFile = TotalProcessedFile + 1; if (TotalProcessedFile >= Files.Length) { Console.WriteLine("Mass File Encryption Process completed, press enter to exit."); }});
                     }
                     while(true)
                     {
                         Console.ReadLine();
-                        if(TotalProcessedFile >= Files.Length)
+                        if(TotalProcessedFile >= TotalFileAvaible)
                         {
                             break;
                         }
@@ -253,15 +258,18 @@ namespace FileSecure_v3
                     // Decrypting mass file
                     string[] Files = Directory.GetFiles(OpenPath);
                     int TotalProcessedFile = 0;
+                    int TotalFileAvaible = 0;
                     Console.WriteLine("Mass File Decryption Started...");
                     foreach (string file in Files)
                     {
-                        Task.Run(() => { Decrypt(Password, file, SavePath+"/"+Path.GetFileName(file)); TotalProcessedFile = TotalProcessedFile + 1; if (TotalProcessedFile >= Files.Length) { Console.WriteLine("Mass File Decryption Process completed, press enter to exit."); } });
+                        if (Path.GetFileName(file) != "")
+                            TotalFileAvaible = TotalFileAvaible + 1;
+                        Task.Run(() => { Decrypt(Password, file, SavePath+"/"+ Path.GetFileNameWithoutExtension(file) + Path.GetExtension(file)); TotalProcessedFile = TotalProcessedFile + 1; if (TotalProcessedFile >= Files.Length) { Console.WriteLine("Mass File Decryption Process completed, press enter to exit."); } });
                     }
                     while (true)
                     {
                         Console.ReadLine();
-                        if (TotalProcessedFile >= Files.Length)
+                        if (TotalProcessedFile >= TotalFileAvaible)
                         {
                             break;
                         }
