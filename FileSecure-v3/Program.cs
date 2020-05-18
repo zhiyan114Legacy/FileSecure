@@ -1,5 +1,6 @@
 ﻿using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.Crypto.IO;
 using Org.BouncyCastle.Crypto.Modes;
 using Org.BouncyCastle.Crypto.Parameters;
 using System;
@@ -14,87 +15,51 @@ namespace FileSecure_v3
 {
     class Program
     {
-        static int CycleSize = 1024 * 1024 * 100; // Increasing this value can reduce the amount of cycle that is required to encrypt an file but also require higher memory consumption
-        static int Encrypt(byte[] PasswordToKey,string OpenPath, string SavePath)
+        //static int CycleSize = 1024 * 1024 * 100; // Increasing this value can reduce the amount of cycle that is required to encrypt an file but also require higher memory consumption
+        static async void Encrypt(byte[] PasswordToKey,string OpenPath, string SavePath)
         {
             // Generate a random Nonce
             byte[] nonce = new byte[128 / 8];
             new Random().NextBytes(nonce);
-            // Setup the Crypto Engine
-            GcmBlockCipher cipher = new GcmBlockCipher(new AesEngine());
-            cipher.Init(true, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
-            // Read the file ad start the encryption
             using (FileStream plainfile = new FileStream(OpenPath, FileMode.Open))
             {
-                byte[] buffer = new byte[CycleSize];
-                plainfile.Seek(0, SeekOrigin.Begin);
-                int bytesRead = plainfile.Read(buffer, 0, CycleSize);
-                int TotalFileSize = nonce.Length;
+                
                 using (FileStream encryptfile = new FileStream(SavePath, FileMode.OpenOrCreate))
                 {
+                    // Write The nonce to the file
+                    //plainfile.Seek(0,SeekOrigin.End);
                     encryptfile.Write(nonce, 0, nonce.Length);
-                    int CycleCount = 0;
-                    byte[] cipherText = new byte[0];
-                    int len = 0;
-                    while (bytesRead > 0)
-                    {
-                        CycleCount = CycleCount + 1;
-                        if (bytesRead < CycleSize)
-                            encryptfile.Seek(0, SeekOrigin.End);
-                        else
-                            encryptfile.Seek(0, SeekOrigin.Current);
-                        cipherText = new byte[cipher.GetOutputSize(bytesRead)];
-                        len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
-                        Console.WriteLine("Cycle #" + CycleCount + "'s Data Length: " + cipherText.Length);
-                        TotalFileSize = TotalFileSize + cipherText.Length;
-                        bytesRead = plainfile.Read(buffer, 0, CycleSize);
-                        if (bytesRead > 0)
-                            encryptfile.Write(cipherText, 0, cipherText.Length);
-                    }
-                    cipher.DoFinal(cipherText, len);
-                    encryptfile.Write(cipherText, 0, cipherText.Length);
-                    Console.WriteLine("Cycle Completed, Final Size: "+TotalFileSize);
-                    Array.Clear(buffer, 0, buffer.Length); // Clean the memory so that it stops hogging the memory if you decided to keep it running after it finishes the task.
+                    // Setup the Crypto Engine then Read the file and start the encryption
+                    BufferedAeadBlockCipher buffblockcipher = new BufferedAeadBlockCipher(new GcmBlockCipher(new AesEngine()));
+                    buffblockcipher.Init(true, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
+                    CipherStream cryptstream = new CipherStream(plainfile, buffblockcipher, buffblockcipher);
+                    cryptstream.CopyTo(encryptfile);
                 }
-                return TotalFileSize;
             }
         }
-        static public int Decrypt(byte[] PasswordToKey, string OpenPath, string SavePath)
+        static async public void Decrypt(byte[] PasswordToKey, string OpenPath, string SavePath)
         {
             using (FileStream encryptfile = File.OpenRead(OpenPath))
             {
                 // Setup the Crypto Engine
                 byte[] nonce = new byte[16];
                 encryptfile.Read(nonce, 0, nonce.Length);
-                encryptfile.Seek(16, SeekOrigin.Begin);
-                GcmBlockCipher cipher = new GcmBlockCipher(new AesEngine());
-                cipher.Init(false, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
-                byte[] buffer = new byte[CycleSize];
-                int bytesRead = encryptfile.Read(buffer, 0, CycleSize);
-                int TotalFileSize = nonce.Length + bytesRead;
                 using (FileStream plainfile = new FileStream(SavePath, FileMode.OpenOrCreate))
                 {
-                    int CycleCount = 0;
-                    int len = 0;
-                    byte[] cipherText = new byte[0];
-                    while (bytesRead > 0)
+                    BufferedAeadBlockCipher buffblockcipher = new BufferedAeadBlockCipher(new GcmBlockCipher(new AesEngine()));
+                    CipherStream cryptstream = new CipherStream(encryptfile, buffblockcipher, buffblockcipher);
+                    buffblockcipher.Init(false, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
+                    try
                     {
-                        CycleCount = CycleCount + 1;
-                        cipherText = new byte[cipher.GetOutputSize(bytesRead)];
-
-                        len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
-                        Console.WriteLine("Cycle #" + CycleCount + "'s Data Length: " + cipherText.Length);
-                        TotalFileSize = TotalFileSize + cipherText.Length;
-                        bytesRead = encryptfile.Read(buffer, 0, CycleSize);
-                        if(bytesRead > 0)
-                            plainfile.Write(cipherText, 0, cipherText.Length);
+                        cryptstream.CopyTo(plainfile);
+                    } catch(InvalidCipherTextException)
+                    {
+                        Console.Clear();
+                        Console.WriteLine("The file ("+ OpenPath +") cannot be decrypted because you supplied an incorrect key or the file has been tampered");
+                        Console.ReadLine();
                     }
-                    cipher.DoFinal(cipherText, len);
-                    plainfile.Write(cipherText, 0, cipherText.Length);
-                    Console.WriteLine("Cycle Completed, Final Size: " + TotalFileSize);
-                    Array.Clear(buffer, 0, buffer.Length); // Clean the memory so that it stops hogging the memory if you decided to keep it running after it finishes the task.
+                    
                 }
-                return TotalFileSize;
             }
         }
         static void Main(string[] args)
@@ -108,7 +73,7 @@ namespace FileSecure_v3
             // Some credit stuff and notes
             Console.Title = "FileSecure v3 by zhiyan114";
             Console.WriteLine("Thank you for choosing FileSecure v3, a light-weighted command prompt file protection software ");
-            Console.WriteLine("This version has many improvement including switching encryption to AES-GCM as well as removing unnecessary need for IV input while still maintaining the same security level. Do note that some feature (such as ability to use randomly generated key) will not be included.");
+            Console.WriteLine("This version has many improvement including switching encryption to AES-GCM (Take that back, BouncyCastle isn't working well atm so we fallback ) as well as removing unnecessary need for IV input while still maintaining the same security level. Do note that some feature (such as ability to use randomly generated key) will not be included.");
             Console.WriteLine("\n Press Enter to continue");
             Console.ReadLine();
             // Prompt user to enter an encryption password
@@ -264,27 +229,27 @@ namespace FileSecure_v3
                 } else if(IsEncryption == false)
                 {
                     // Single File Decryption
-                    //try
-                    //{
+                    try
+                    {
                         Console.WriteLine("Decrypting File, please wait...");
                         Decrypt(PasswordToKey, OpenPath, SavePath);
                         Console.WriteLine("Decryption Completed, press Enter to exit the application");
                         Console.ReadLine();
-                    //}
-                    //catch (UnauthorizedAccessException)
-                   // {
-                   //     Console.Clear();
-                   //     Console.WriteLine("Permission Denied while accessing the file. Please try again by running the application as administrator. Press enter to close the application.");
-                   //     Console.ReadLine();
-                   //     return;
-                   // }
-                   // catch (Exception ex)
-                   // {
-                    //    Console.Clear();
-                    //    Console.WriteLine("Unexpected error occured, error message: " + ex.Message + " (Press enter to exit the application)");
-                    //    Console.ReadLine();
-                   //     return;
-                   // }
+                    }
+                    catch (UnauthorizedAccessException)
+                    {
+                        Console.Clear();
+                        Console.WriteLine("Permission Denied while accessing the file. Please try again by running the application as administrator. Press enter to close the application.");
+                        Console.ReadLine();
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Clear();
+                        Console.WriteLine("Unexpected error occured, error message: " + ex.Message + " (Press enter to exit the application)");
+                        Console.ReadLine();
+                        return;
+                    }
                 }
 
             }
