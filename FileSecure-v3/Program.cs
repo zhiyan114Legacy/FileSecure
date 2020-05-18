@@ -34,6 +34,8 @@ namespace FileSecure_v3
                 {
                     encryptfile.Write(nonce, 0, nonce.Length);
                     int CycleCount = 0;
+                    byte[] cipherText = new byte[0];
+                    int len = 0;
                     while (bytesRead > 0)
                     {
                         CycleCount = CycleCount + 1;
@@ -41,15 +43,16 @@ namespace FileSecure_v3
                             encryptfile.Seek(0, SeekOrigin.End);
                         else
                             encryptfile.Seek(0, SeekOrigin.Current);
-                        byte[] cipherText = new byte[cipher.GetOutputSize(bytesRead)];
-                        int len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
-                        if (bytesRead < CycleSize)
-                            cipher.DoFinal(cipherText, len);
+                        cipherText = new byte[cipher.GetOutputSize(bytesRead)];
+                        len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
                         Console.WriteLine("Cycle #" + CycleCount + "'s Data Length: " + cipherText.Length);
                         TotalFileSize = TotalFileSize + cipherText.Length;
-                        encryptfile.Write(cipherText, 0, cipherText.Length);
                         bytesRead = plainfile.Read(buffer, 0, CycleSize);
+                        if (bytesRead > 0)
+                            encryptfile.Write(cipherText, 0, cipherText.Length);
                     }
+                    cipher.DoFinal(cipherText, len);
+                    encryptfile.Write(cipherText, 0, cipherText.Length);
                     Console.WriteLine("Cycle Completed, Final Size: "+TotalFileSize);
                     Array.Clear(buffer, 0, buffer.Length); // Clean the memory so that it stops hogging the memory if you decided to keep it running after it finishes the task.
                 }
@@ -62,33 +65,32 @@ namespace FileSecure_v3
             {
                 // Setup the Crypto Engine
                 byte[] nonce = new byte[16];
-                encryptfile.Seek(0, SeekOrigin.Begin);
                 encryptfile.Read(nonce, 0, nonce.Length);
-                encryptfile.Seek(0, SeekOrigin.Current);
+                encryptfile.Seek(16, SeekOrigin.Begin);
                 GcmBlockCipher cipher = new GcmBlockCipher(new AesEngine());
                 cipher.Init(false, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
                 byte[] buffer = new byte[CycleSize];
                 int bytesRead = encryptfile.Read(buffer, 0, CycleSize);
-                int TotalFileSize = 0;
+                int TotalFileSize = nonce.Length + bytesRead;
                 using (FileStream plainfile = new FileStream(SavePath, FileMode.OpenOrCreate))
                 {
                     int CycleCount = 0;
+                    int len = 0;
+                    byte[] cipherText = new byte[0];
                     while (bytesRead > 0)
                     {
                         CycleCount = CycleCount + 1;
-                        if (bytesRead < CycleSize)
-                            plainfile.Seek(0, SeekOrigin.End);
-                        else
-                            plainfile.Seek(0, SeekOrigin.Current);
-                        var cipherText = new byte[cipher.GetOutputSize(bytesRead)];
-                        var len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
-                        if (bytesRead < CycleSize)
-                            cipher.DoFinal(cipherText, len);
+                        cipherText = new byte[cipher.GetOutputSize(bytesRead)];
+
+                        len = cipher.ProcessBytes(buffer, 0, bytesRead, cipherText, 0);
                         Console.WriteLine("Cycle #" + CycleCount + "'s Data Length: " + cipherText.Length);
                         TotalFileSize = TotalFileSize + cipherText.Length;
-                        plainfile.Write(cipherText, 0, cipherText.Length);
                         bytesRead = encryptfile.Read(buffer, 0, CycleSize);
+                        if(bytesRead > 0)
+                            plainfile.Write(cipherText, 0, cipherText.Length);
                     }
+                    cipher.DoFinal(cipherText, len);
+                    plainfile.Write(cipherText, 0, cipherText.Length);
                     Console.WriteLine("Cycle Completed, Final Size: " + TotalFileSize);
                     Array.Clear(buffer, 0, buffer.Length); // Clean the memory so that it stops hogging the memory if you decided to keep it running after it finishes the task.
                 }
@@ -236,7 +238,7 @@ namespace FileSecure_v3
                 }
                 Console.Clear();
                 // Start the encryption operation
-                byte[] PasswordToKey = new PasswordDeriveBytes(Password, Encoding.UTF8.GetBytes(Password)).GetBytes(256 / 8);
+                byte[] PasswordToKey = new PasswordDeriveBytes(Encoding.UTF8.GetBytes(Password),null).GetBytes(256 / 8);
                 if(IsEncryption == true)
                 {
                     // Single File Encryption
@@ -262,27 +264,27 @@ namespace FileSecure_v3
                 } else if(IsEncryption == false)
                 {
                     // Single File Decryption
-                    try
-                    {
+                    //try
+                    //{
                         Console.WriteLine("Decrypting File, please wait...");
                         Decrypt(PasswordToKey, OpenPath, SavePath);
                         Console.WriteLine("Decryption Completed, press Enter to exit the application");
                         Console.ReadLine();
-                    }
-                    catch (UnauthorizedAccessException)
-                    {
-                        Console.Clear();
-                        Console.WriteLine("Permission Denied while accessing the file. Please try again by running the application as administrator. Press enter to close the application.");
-                        Console.ReadLine();
-                        return;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Clear();
-                        Console.WriteLine("Unexpected error occured, error message: " + ex.Message + " (Press enter to exit the application)");
-                        Console.ReadLine();
-                        return;
-                    }
+                    //}
+                    //catch (UnauthorizedAccessException)
+                   // {
+                   //     Console.Clear();
+                   //     Console.WriteLine("Permission Denied while accessing the file. Please try again by running the application as administrator. Press enter to close the application.");
+                   //     Console.ReadLine();
+                   //     return;
+                   // }
+                   // catch (Exception ex)
+                   // {
+                    //    Console.Clear();
+                    //    Console.WriteLine("Unexpected error occured, error message: " + ex.Message + " (Press enter to exit the application)");
+                    //    Console.ReadLine();
+                   //     return;
+                   // }
                 }
 
             }
