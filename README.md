@@ -14,3 +14,7 @@ This software is completed and tested.
 This software requires visual studio on windows. You may submit any suggestions or pull request at your own will.
 
 There will be more comment on the source code to make it easier to understand.
+
+## External Library
+We use external library to help the development of the software.
+* BouncyCastle - AES-256-GCM Encryption
