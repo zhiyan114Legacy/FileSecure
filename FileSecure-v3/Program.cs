@@ -15,11 +15,10 @@ namespace FileSecure_v3
 {
     class Program
     {
-        //static int CycleSize = 1024 * 1024 * 100; // Increasing this value can reduce the amount of cycle that is required to encrypt an file but also require higher memory consumption
         static void Encrypt(string Password,string OpenPath, string SavePath)
         {
             // Generate a random Nonce
-            byte[] nonce = new byte[128 / 8];
+            byte[] nonce = new byte[96 / 8];
             new Random().NextBytes(nonce);
             // Create the key
             byte[] PasswordToKey = new PasswordDeriveBytes(Encoding.UTF8.GetBytes(Password), nonce).GetBytes(256 / 8);
@@ -29,7 +28,6 @@ namespace FileSecure_v3
                 using (FileStream encryptfile = new FileStream(SavePath, FileMode.OpenOrCreate))
                 {
                     // Write The nonce to the file
-                    //plainfile.Seek(0,SeekOrigin.End);
                     encryptfile.Write(nonce, 0, nonce.Length);
                     // Setup the Crypto Engine then Read the file and start the encryption
                     BufferedAeadBlockCipher buffblockcipher = new BufferedAeadBlockCipher(new GcmBlockCipher(new AesEngine()));
@@ -57,7 +55,7 @@ namespace FileSecure_v3
             using (FileStream encryptfile = File.OpenRead(OpenPath))
             {
                 // Get the IV/Nonce from the file
-                byte[] nonce = new byte[16];
+                byte[] nonce = new byte[12];
                 encryptfile.Read(nonce, 0, nonce.Length);
                 // Create the password
                 byte[] PasswordToKey = new PasswordDeriveBytes(Encoding.UTF8.GetBytes(Password), nonce).GetBytes(256 / 8);
