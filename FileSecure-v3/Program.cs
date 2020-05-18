@@ -33,7 +33,14 @@ namespace FileSecure_v3
                     BufferedAeadBlockCipher buffblockcipher = new BufferedAeadBlockCipher(new GcmBlockCipher(new AesEngine()));
                     buffblockcipher.Init(true, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
                     CipherStream cryptstream = new CipherStream(plainfile, buffblockcipher, buffblockcipher);
-                    cryptstream.CopyTo(encryptfile);
+                    try
+                    {
+                        cryptstream.CopyTo(encryptfile);
+                        Console.WriteLine("The File (" + OpenPath + ") has been successfully encrypted");
+                    } catch(Exception ex)
+                    {
+                        Console.WriteLine("The File ("+ OpenPath+") has encounter an unknown error while encrypting. Error: "+ex.Message);
+                    }
                 }
             }
         }
@@ -52,11 +59,11 @@ namespace FileSecure_v3
                     try
                     {
                         cryptstream.CopyTo(plainfile);
+                        Console.WriteLine("The File ("+OpenPath+") has been successfully decrypted.");
                     } catch(InvalidCipherTextException)
                     {
                         Console.Clear();
-                        Console.WriteLine("The file ("+ OpenPath +") cannot be decrypted because you supplied an incorrect key or the file has been tampered");
-                        Console.ReadLine();
+                        Console.WriteLine("The file ("+ OpenPath +") cannot be decrypted because you supplied an incorrect key or the file has been tampered.");
                     }
                     
                 }
@@ -65,10 +72,7 @@ namespace FileSecure_v3
         static void Main(string[] args)
         {
             // Some variable that we will need to do the jobs
-            string Password;
-            string OpenPath;
             bool AllFileInFolder;
-            string SavePath;
             bool IsEncryption;
             // Some credit stuff and notes
             Console.Title = "FileSecure v3 by zhiyan114";
@@ -79,7 +83,7 @@ namespace FileSecure_v3
             // Prompt user to enter an encryption password
             Console.Clear();
             Console.WriteLine("Please type a password that you would like to use to encrypt your file and press enter to continue (Remember the password, otherwise your file cannot be recovered without a backup):");
-            Password = Console.ReadLine();
+            string Password = Console.ReadLine();
             while (true)
             {
                 if (string.IsNullOrWhiteSpace(Password))
@@ -153,7 +157,7 @@ namespace FileSecure_v3
                 // Single File Encryption Method
                 // Now let the user select the file that they want to encrypt
                 Console.WriteLine("Now type or paste the path of the file that you would like to be encrypted/decrypted: ");
-                OpenPath = Console.ReadLine();
+                string OpenPath = Console.ReadLine();
                 while (true)
                 {
                     if (string.IsNullOrWhiteSpace(OpenPath))
@@ -176,7 +180,7 @@ namespace FileSecure_v3
                 Console.Clear();
                 // Now prompt them to select a path that they want the file to write on
                 Console.WriteLine("Please type/paste a path that you would like the file to be written on: ");
-                SavePath = Console.ReadLine();
+                string SavePath = Console.ReadLine();
                 while(true)
                 {
                     if (string.IsNullOrWhiteSpace(SavePath))
@@ -211,7 +215,7 @@ namespace FileSecure_v3
                     {
                         Console.WriteLine("Encrypting File, please wait...");
                         Encrypt(PasswordToKey, OpenPath, SavePath);
-                        Console.WriteLine("Encryption Completed, press Enter to exit the application");
+                        Console.WriteLine("Encryption Process has been Completed, press Enter to exit the application");
                         Console.ReadLine();
                     } catch(UnauthorizedAccessException) {
                         Console.Clear();
@@ -233,7 +237,7 @@ namespace FileSecure_v3
                     {
                         Console.WriteLine("Decrypting File, please wait...");
                         Decrypt(PasswordToKey, OpenPath, SavePath);
-                        Console.WriteLine("Decryption Completed, press Enter to exit the application");
+                        Console.WriteLine("Decryption Process has been Completed, press Enter to exit the application");
                         Console.ReadLine();
                     }
                     catch (UnauthorizedAccessException)
