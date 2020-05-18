@@ -17,4 +17,4 @@ There will be more comment on the source code to make it easier to understand.
 
 ## External Library
 We use external library to help the development of the software.
-* BouncyCastle - AES-256-GCM Encryption
+* BouncyCastle - AES-256-GCM Encryption and Decryption
