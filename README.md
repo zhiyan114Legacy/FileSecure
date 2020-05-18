@@ -12,4 +12,5 @@ This software is completed and tested.
 * Supported nearly all file-size
 ## Additional Informations
 This software requires visual studio on windows. You may submit any suggestions or pull request at your own will.
+
 There will be more comment on the source code to make it easier to understand.
