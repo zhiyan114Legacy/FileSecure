@@ -16,7 +16,7 @@ namespace FileSecure_v3
     class Program
     {
         //static int CycleSize = 1024 * 1024 * 100; // Increasing this value can reduce the amount of cycle that is required to encrypt an file but also require higher memory consumption
-        static async void Encrypt(string Password,string OpenPath, string SavePath)
+        static void Encrypt(string Password,string OpenPath, string SavePath)
         {
             // Generate a random Nonce
             byte[] nonce = new byte[128 / 8];
@@ -39,14 +39,19 @@ namespace FileSecure_v3
                     {
                         cryptstream.CopyTo(encryptfile);
                         Console.WriteLine("The File (" + OpenPath + ") has been successfully encrypted");
-                    } catch(Exception ex)
+                    } catch (UnauthorizedAccessException)
+                    {
+                        Console.WriteLine("Permission Denied while accessing the file (Save/Open location for: "+OpenPath+"). Please try again by running the application as administrator. Press enter to close the application.");
+                        Console.ReadLine();
+                        return;
+                    } catch (Exception ex)
                     {
                         Console.WriteLine("The File ("+ OpenPath+") has encounter an unknown error while encrypting. Error: "+ex.Message);
                     }
                 }
             }
         }
-        static async public void Decrypt(string Password, string OpenPath, string SavePath)
+        static public void Decrypt(string Password, string OpenPath, string SavePath)
         {
             using (FileStream encryptfile = File.OpenRead(OpenPath))
             {
@@ -54,7 +59,7 @@ namespace FileSecure_v3
                 byte[] nonce = new byte[16];
                 encryptfile.Read(nonce, 0, nonce.Length);
                 // Create the password
-                byte[] PasswordToKey = new PasswordDeriveBytes(Encoding.UTF8.GetBytes(Password), null).GetBytes(256 / 8);
+                byte[] PasswordToKey = new PasswordDeriveBytes(Encoding.UTF8.GetBytes(Password), nonce).GetBytes(256 / 8);
                 using (FileStream plainfile = new FileStream(SavePath, FileMode.OpenOrCreate))
                 {
                     // Setup the Crypto Engine and start the encryption process
@@ -65,10 +70,17 @@ namespace FileSecure_v3
                     {
                         cryptstream.CopyTo(plainfile);
                         Console.WriteLine("The File ("+OpenPath+") has been successfully decrypted.");
-                    } catch(InvalidCipherTextException)
+                    } catch (UnauthorizedAccessException)
                     {
-                        Console.Clear();
+                        Console.WriteLine("Permission Denied while accessing the file (Save/Open location for: " + OpenPath + "). Please try again by running the application as administrator. Press enter to close the application.");
+                        Console.ReadLine();
+                        return;
+                    } catch (InvalidCipherTextException)
+                    {
                         Console.WriteLine("The file ("+ OpenPath +") cannot be decrypted because you supplied an incorrect key or the file has been tampered.");
+                    } catch(Exception ex)
+                    {
+                        Console.WriteLine("The File (" + OpenPath + ") has encounter an unknown error while decrypting. Error: " + ex.Message);
                     }
                     
                 }
@@ -156,7 +168,105 @@ namespace FileSecure_v3
             Console.Clear();
             if (AllFileInFolder == true)
             {
-
+                // Multi-File Encryption
+                // Let the user select the folder where they want all the files to be encrypted, subfolder will be excluded though.
+                Console.WriteLine("Now type or paste the folder that you want all the files to be encrypted/decrypted: ");
+                string OpenPath = Console.ReadLine();
+                while(true)
+                {
+                    if (string.IsNullOrEmpty(OpenPath))
+                    {
+                        // Empty stuff not gonna work
+                        Console.Clear();
+                        Console.WriteLine("An empty or whitespace only path name is not allowed, please type/paste your path again: ");
+                        OpenPath = Console.ReadLine();
+                    }
+                    else if (!Directory.Exists(OpenPath))
+                    {
+                        // Directory Not Found
+                        Console.Clear();
+                        Console.WriteLine("The directory was not found, please try again: ");
+                        OpenPath = Console.ReadLine();
+                    }
+                    else if (Directory.GetFiles(OpenPath).Length <= 0)
+                    {
+                        // There is no files in the directory
+                        Console.Clear();
+                        Console.WriteLine("There isn't files in the directory, try a different directory instead: ");
+                        OpenPath = Console.ReadLine();
+                    }
+                    else
+                        break;
+                }
+                // Now let them choose the location to store the file.
+                Console.Clear();
+                Console.WriteLine("Now type or paste the folder that you want the file to be saved in: ");
+                string SavePath = Console.ReadLine();
+                while (true)
+                {
+                    if (string.IsNullOrEmpty(SavePath))
+                    {
+                        // Empty stuff not gonna work
+                        Console.Clear();
+                        Console.WriteLine("An empty or whitespace only path name is not allowed, please type/paste your path again: ");
+                        SavePath = Console.ReadLine();
+                    }
+                    else if (!Directory.Exists(SavePath))
+                    {
+                        // Directory Not Found
+                        Console.Clear();
+                        Console.WriteLine("The directory was not found, please try again: ");
+                        SavePath = Console.ReadLine();
+                    }
+                    else if (Directory.GetFiles(SavePath).Length > 0)
+                    {
+                        // There is file detected in the directory, warn user
+                        Console.Clear();
+                        Console.WriteLine("WARNING: There is already file in the directory that you try to save the file in. The files will be overwritten if there is a same name. Press Enter to confirm that you want to proceed, otherwise terminate the application.");
+                        Console.ReadLine();
+                        break;
+                    }
+                    else
+                        break;
+                }
+                Console.Clear();
+                if(IsEncryption == true)
+                {
+                    // Encrypting mass file
+                    string[] Files = Directory.GetFiles(OpenPath);
+                    int TotalProcessedFile = 0;
+                    Console.WriteLine("Mass File Encryption Started...");
+                    foreach(string file in Files)
+                    {
+                        Task.Run(() => { Encrypt(Password, file, SavePath + "/" + Path.GetFileName(file)); TotalProcessedFile = TotalProcessedFile + 1; if (TotalProcessedFile >= Files.Length) { Console.WriteLine("Mass File Encryption Process completed, press enter to exit."); }});
+                    }
+                    while(true)
+                    {
+                        Console.ReadLine();
+                        if(TotalProcessedFile >= Files.Length)
+                        {
+                            break;
+                        }
+                    }
+                } else if(IsEncryption == false)
+                {
+                    // Decrypting mass file
+                    string[] Files = Directory.GetFiles(OpenPath);
+                    int TotalProcessedFile = 0;
+                    Console.WriteLine("Mass File Decryption Started...");
+                    foreach (string file in Files)
+                    {
+                        Task.Run(() => { Decrypt(Password, file, SavePath+"/"+Path.GetFileName(file)); TotalProcessedFile = TotalProcessedFile + 1; if (TotalProcessedFile >= Files.Length) { Console.WriteLine("Mass File Decryption Process completed, press enter to exit."); } });
+                    }
+                    while (true)
+                    {
+                        Console.ReadLine();
+                        if (TotalProcessedFile >= Files.Length)
+                        {
+                            break;
+                        }
+                    }
+                }
             } else if(AllFileInFolder == false)
             {
                 // Single File Encryption Method
