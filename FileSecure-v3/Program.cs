@@ -16,11 +16,13 @@ namespace FileSecure_v3
     class Program
     {
         //static int CycleSize = 1024 * 1024 * 100; // Increasing this value can reduce the amount of cycle that is required to encrypt an file but also require higher memory consumption
-        static async void Encrypt(byte[] PasswordToKey,string OpenPath, string SavePath)
+        static async void Encrypt(string Password,string OpenPath, string SavePath)
         {
             // Generate a random Nonce
             byte[] nonce = new byte[128 / 8];
             new Random().NextBytes(nonce);
+            // Create the key
+            byte[] PasswordToKey = new PasswordDeriveBytes(Encoding.UTF8.GetBytes(Password), nonce).GetBytes(256 / 8);
             using (FileStream plainfile = new FileStream(OpenPath, FileMode.Open))
             {
                 
@@ -44,15 +46,18 @@ namespace FileSecure_v3
                 }
             }
         }
-        static async public void Decrypt(byte[] PasswordToKey, string OpenPath, string SavePath)
+        static async public void Decrypt(string Password, string OpenPath, string SavePath)
         {
             using (FileStream encryptfile = File.OpenRead(OpenPath))
             {
-                // Setup the Crypto Engine
+                // Get the IV/Nonce from the file
                 byte[] nonce = new byte[16];
                 encryptfile.Read(nonce, 0, nonce.Length);
+                // Create the password
+                byte[] PasswordToKey = new PasswordDeriveBytes(Encoding.UTF8.GetBytes(Password), null).GetBytes(256 / 8);
                 using (FileStream plainfile = new FileStream(SavePath, FileMode.OpenOrCreate))
                 {
+                    // Setup the Crypto Engine and start the encryption process
                     BufferedAeadBlockCipher buffblockcipher = new BufferedAeadBlockCipher(new GcmBlockCipher(new AesEngine()));
                     CipherStream cryptstream = new CipherStream(encryptfile, buffblockcipher, buffblockcipher);
                     buffblockcipher.Init(false, new AeadParameters(new KeyParameter(PasswordToKey), 128, nonce));
@@ -207,14 +212,13 @@ namespace FileSecure_v3
                 }
                 Console.Clear();
                 // Start the encryption operation
-                byte[] PasswordToKey = new PasswordDeriveBytes(Encoding.UTF8.GetBytes(Password),null).GetBytes(256 / 8);
                 if(IsEncryption == true)
                 {
                     // Single File Encryption
                     try
                     {
                         Console.WriteLine("Encrypting File, please wait...");
-                        Encrypt(PasswordToKey, OpenPath, SavePath);
+                        Encrypt(Password, OpenPath, SavePath);
                         Console.WriteLine("Encryption Process has been Completed, press Enter to exit the application");
                         Console.ReadLine();
                     } catch(UnauthorizedAccessException) {
@@ -236,7 +240,7 @@ namespace FileSecure_v3
                     try
                     {
                         Console.WriteLine("Decrypting File, please wait...");
-                        Decrypt(PasswordToKey, OpenPath, SavePath);
+                        Decrypt(Password, OpenPath, SavePath);
                         Console.WriteLine("Decryption Process has been Completed, press Enter to exit the application");
                         Console.ReadLine();
                     }
