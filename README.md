@@ -11,10 +11,10 @@ This software is completed and tested.
 * Multi-threading for mass file encryption/decryption to process all the files at the same time (speed is limited on your disk unless your using an old CPU)
 * Supported nearly all file-size
 ## Additional Informations
-This software requires visual studio on windows. You may submit any suggestions or pull request at your own will.
+Visual Studio are require to compile the source code (which are recommended since some minor changes will not be marked as a new release).
 
 There will be more comment on the source code to make it easier to understand.
 
 ## External Library
-We use external library to help the development of the software.
+We use external library to create this software to where it is now.
 * BouncyCastle - AES-256-GCM Encryption and Decryption
