@@ -41,8 +41,6 @@ namespace FileSecure_v3
                     } catch (UnauthorizedAccessException)
                     {
                         Console.WriteLine("Permission Denied while accessing the file (Save/Open location for: "+OpenPath+"). Please try again by running the application as administrator. Press enter to close the application.");
-                        Console.ReadLine();
-                        return;
                     } catch (Exception ex)
                     {
                         Console.WriteLine("The File ("+ OpenPath+") has encounter an unknown error while encrypting. Error: "+ex.Message);
@@ -73,8 +71,6 @@ namespace FileSecure_v3
                     } catch (UnauthorizedAccessException)
                     {
                         Console.WriteLine("Permission Denied while accessing the file (Save/Open location for: " + OpenPath + "). Please try again by running the application as administrator. Press enter to close the application.");
-                        Console.ReadLine();
-                        return;
                     } catch (InvalidCipherTextException)
                     {
                         Console.WriteLine("The file ("+ OpenPath +") cannot be decrypted because you supplied an incorrect key or the file has been tampered.");
